@@ -1,0 +1,57 @@
+name: Build TrollStore IPA
+
+# 設定為手動觸發，你按按鈕它才跑
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    # 呼叫雲端最新版的 macOS 伺服器
+    runs-on: macos-latest
+
+    steps:
+      - name: 📥 下載程式碼
+        uses: actions/checkout@v4
+
+      - name: ⚙️ 設定 Flutter 環境
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable' # 預設使用穩定版 Flutter
+
+      - name: 📦 安裝依賴套件
+        run: flutter pub get
+
+
+      - name: 🔨 編譯未簽名的 iOS App
+        run: flutter build ios --release --no-codesign
+
+      - name: 🎁 打包成巨魔專用 IPA
+        run: |
+          cd build/ios/iphoneos
+          mkdir Payload
+          mv Runner.app Payload/
+          zip -qr rollcall_TrollStore.ipa Payload/
+          
+          # 顯示檔案資訊
+          ls -lh rollcall_TrollStore.ipa
+          echo "✅ IPA 打包完成"
+
+      - name: 📤 上傳產出的 IPA 檔案
+        uses: actions/upload-artifact@v4
+        with:
+          name: TrollStore-IPA
+          path: build/ios/iphoneos/rollcall_TrollStore.ipa
+          
+      - name: 🎉 完成
+        run: |
+          echo "================================"
+          echo "🎉 打包完成！"
+          echo "================================"
+          echo ""
+          echo "📦 產出檔案："
+          echo "   - rollcall_TrollStore.ipa"
+          echo ""
+          echo "📝 安裝步驟："
+          echo "   1. 下載 Artifacts 中的 IPA"
+          echo "   2. 傳到 iPhone"
+          echo "   3. 使用 TrollStore 安裝"
